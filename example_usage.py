@@ -1,0 +1,65 @@
+from linear_regression import LinearRegression
+from generate_data import generate_linear_data
+import numpy as np
+
+if __name__ == '__main__':
+    X_train, y_train = generate_linear_data(n_samples=100, n_features=2, noise=10.0)
+    X_test, y_test = generate_linear_data(n_samples=30, n_features=2, noise=10.0, seed=42)
+
+    print("=" * 60)
+    print("Linear Regression Examples")
+    print("=" * 60)
+
+    print("\n1. OLS Regression (No Regularization)")
+    print("-" * 60)
+    model_ols = LinearRegression(penalty=None, solver='closed')
+    model_ols.fit(X_train, y_train)
+    score_ols = model_ols.score(X_test, y_test)
+    print(f"R^2 Score: {score_ols:.4f}")
+    print(f"Weights: {model_ols.weights}")
+    print(f"Bias: {model_ols.bias:.4f}")
+
+    print("\n2. Ridge Regression (L2 Regularization)")
+    print("-" * 60)
+    model_ridge = LinearRegression(penalty='l2', alpha=0.1, solver='closed')
+    model_ridge.fit(X_train, y_train)
+    score_ridge = model_ridge.score(X_test, y_test)
+    print(f"R^2 Score: {score_ridge:.4f}")
+    print(f"Weights: {model_ridge.weights}")
+    print(f"Bias: {model_ridge.bias:.4f}")
+
+    print("\n3. Lasso Regression (L1 Regularization with Gradient Descent)")
+    print("-" * 60)
+    model_lasso = LinearRegression(penalty='l1', alpha=0.1, lr=0.01, n_iters=1000, solver='gd', loss='mse')
+    model_lasso.fit(X_train, y_train)
+    score_lasso = model_lasso.score(X_test, y_test)
+    print(f"R^2 Score: {score_lasso:.4f}")
+    print(f"Weights: {model_lasso.weights}")
+    print(f"Bias: {model_lasso.bias:.4f}")
+
+    print("\n4. Ridge Regression with Gradient Descent")
+    print("-" * 60)
+    model_gd_ridge = LinearRegression(penalty='l2', alpha=0.1, lr=0.01, n_iters=1000, solver='gd', loss='mse')
+    model_gd_ridge.fit(X_train, y_train)
+    score_gd_ridge = model_gd_ridge.score(X_test, y_test)
+    print(f"R^2 Score: {score_gd_ridge:.4f}")
+    print(f"Weights: {model_gd_ridge.weights}")
+    print(f"Bias: {model_gd_ridge.bias:.4f}")
+
+    print("\n5. Regression with MAE Loss (Gradient Descent)")
+    print("-" * 60)
+    model_mae = LinearRegression(penalty=None, lr=0.01, n_iters=1000, solver='gd', loss='mae')
+    model_mae.fit(X_train, y_train)
+    score_mae = model_mae.score(X_test, y_test)
+    print(f"R^2 Score: {score_mae:.4f}")
+    print(f"Weights: {model_mae.weights}")
+    print(f"Bias: {model_mae.bias:.4f}")
+
+    print("\n" + "=" * 60)
+    print("Summary: R^2 Scores Comparison")
+    print("=" * 60)
+    print(f"OLS (Closed-form):        {score_ols:.4f}")
+    print(f"Ridge (Closed-form):      {score_ridge:.4f}")
+    print(f"Lasso (Gradient Descent): {score_lasso:.4f}")
+    print(f"Ridge (Gradient Descent): {score_gd_ridge:.4f}")
+    print(f"MAE Loss (Gradient Descent): {score_mae:.4f}")
