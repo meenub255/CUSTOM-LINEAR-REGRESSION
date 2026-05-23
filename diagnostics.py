@@ -1,5 +1,5 @@
 """
-Diagnostic tools for Linear Regression: Normality and Multicollinearity tests.
+Diagnostic tools for Linear Regression: Normality, Multicollinearity, and Heteroscedasticity tests.
 
 This module provides comprehensive statistical tests and diagnostics for checking
 linear regression assumptions.
@@ -7,6 +7,223 @@ linear regression assumptions.
 
 import numpy as np
 from scipy import stats
+
+
+class HeteroscedacityTest:
+    """
+    Test for heteroscedasticity (non-constant variance) of residuals.
+    
+    Linear regression assumes homoscedasticity (constant variance of residuals).
+    This class provides multiple tests to verify this assumption.
+    """
+    
+    def __init__(self, alpha=0.05):
+        """
+        Parameters:
+        -----------
+        alpha : float
+            Significance level for hypothesis tests (default: 0.05)
+        """
+        self.alpha = alpha
+        self.results = {}
+    
+    def breusch_pagan_test(self, residuals, X):
+        """
+        Breusch-Pagan Test for heteroscedasticity.
+        
+        Tests if residual variance depends on the explanatory variables.
+        
+        Parameters:
+        -----------
+        residuals : array-like
+            Residuals from the regression model
+        X : array-like of shape (n_samples, n_features)
+            Feature matrix used in the original regression
+            
+        Returns:
+        --------
+        result : dict
+            Contains test statistic, p-value, and interpretation
+        """
+        residuals = np.array(residuals)
+        X = np.array(X, dtype=float)
+        n_samples = len(residuals)
+        
+        # Step 1: Fit auxiliary regression of squared residuals on X
+        residuals_squared = residuals ** 2
+        X_aug = np.c_[np.ones(n_samples), X]
+        
+        try:
+            beta = np.linalg.lstsq(X_aug, residuals_squared, rcond=None)[0]
+            y_pred = np.dot(X_aug, beta)
+            ss_res = np.sum((residuals_squared - y_pred) ** 2)
+            ss_tot = np.sum((residuals_squared - np.mean(residuals_squared)) ** 2)
+            r_squared = 1 - (ss_res / ss_tot)
+        except:
+            r_squared = 0
+        
+        # Step 2: Calculate test statistic
+        test_statistic = n_samples * r_squared
+        p_value = 1 - stats.chi2.cdf(test_statistic, df=X.shape[1])
+        
+        is_homoscedastic = p_value > self.alpha
+        
+        result = {
+            'test': 'Breusch-Pagan',
+            'statistic': test_statistic,
+            'p_value': p_value,
+            'is_homoscedastic': is_homoscedastic,
+            'interpretation': 'Homoscedastic' if is_homoscedastic else 'Heteroscedastic'
+        }
+        self.results['breusch_pagan'] = result
+        return result
+    
+    def white_test(self, residuals, X):
+        """
+        White Test for heteroscedasticity.
+        
+        More general test that includes squared and interaction terms of X.
+        
+        Parameters:
+        -----------
+        residuals : array-like
+            Residuals from the regression model
+        X : array-like of shape (n_samples, n_features)
+            Feature matrix used in the original regression
+            
+        Returns:
+        --------
+        result : dict
+            Contains test statistic, p-value, and interpretation
+        """
+        residuals = np.array(residuals)
+        X = np.array(X, dtype=float)
+        n_samples = len(residuals)
+        n_features = X.shape[1]
+        
+        # Create auxiliary variables: X, X^2, and interactions
+        X_squared = X ** 2
+        X_aux = np.c_[np.ones(n_samples), X, X_squared]
+        
+        # Fit auxiliary regression
+        residuals_squared = residuals ** 2
+        
+        try:
+            beta = np.linalg.lstsq(X_aux, residuals_squared, rcond=None)[0]
+            y_pred = np.dot(X_aux, beta)
+            ss_res = np.sum((residuals_squared - y_pred) ** 2)
+            ss_tot = np.sum((residuals_squared - np.mean(residuals_squared)) ** 2)
+            r_squared = 1 - (ss_res / ss_tot)
+        except:
+            r_squared = 0
+        
+        # Test statistic follows chi-square distribution
+        test_statistic = n_samples * r_squared
+        p_value = 1 - stats.chi2.cdf(test_statistic, df=X_aux.shape[1] - 1)
+        
+        is_homoscedastic = p_value > self.alpha
+        
+        result = {
+            'test': 'White',
+            'statistic': test_statistic,
+            'p_value': p_value,
+            'is_homoscedastic': is_homoscedastic,
+            'interpretation': 'Homoscedastic' if is_homoscedastic else 'Heteroscedastic'
+        }
+        self.results['white'] = result
+        return result
+    
+    def goldfeld_quandt_test(self, residuals, X, split_fraction=0.5):
+        """
+        Goldfeld-Quandt Test for heteroscedasticity.
+        
+        Splits data and compares variance of residuals in two subsamples.
+        
+        Parameters:
+        -----------
+        residuals : array-like
+            Residuals from the regression model
+        X : array-like of shape (n_samples, n_features)
+            Feature matrix used in the original regression
+        split_fraction : float
+            Fraction of data to exclude in the middle (default: 0.5)
+            
+        Returns:
+        --------
+        result : dict
+            Contains test statistic, p-value, and interpretation
+        """
+        residuals = np.array(residuals)
+        X = np.array(X, dtype=float)
+        n_samples = len(residuals)
+        
+        # Sort by first feature
+        sort_idx = np.argsort(X[:, 0])
+        residuals_sorted = residuals[sort_idx]
+        
+        # Split data: first 1/3 and last 1/3
+        split_point = int(n_samples / 3)
+        residuals_1 = residuals_sorted[:split_point]
+        residuals_2 = residuals_sorted[-split_point:]
+        
+        # Calculate test statistic (F-test of variances)
+        var_1 = np.var(residuals_1, ddof=1)
+        var_2 = np.var(residuals_2, ddof=1)
+        
+        # F-statistic is ratio of larger to smaller variance
+        if var_1 >= var_2:
+            test_statistic = var_1 / var_2
+            df1, df2 = len(residuals_1) - 1, len(residuals_2) - 1
+        else:
+            test_statistic = var_2 / var_1
+            df1, df2 = len(residuals_2) - 1, len(residuals_1) - 1
+        
+        p_value = 1 - stats.f.cdf(test_statistic, df1, df2)
+        
+        is_homoscedastic = p_value > self.alpha
+        
+        result = {
+            'test': 'Goldfeld-Quandt',
+            'statistic': test_statistic,
+            'p_value': p_value,
+            'is_homoscedastic': is_homoscedastic,
+            'interpretation': 'Homoscedastic' if is_homoscedastic else 'Heteroscedastic'
+        }
+        self.results['goldfeld_quandt'] = result
+        return result
+    
+    def run_all_tests(self, residuals, X):
+        """
+        Run all heteroscedasticity tests.
+        
+        Parameters:
+        -----------
+        residuals : array-like
+            Residuals from the regression model
+        X : array-like of shape (n_samples, n_features)
+            Feature matrix
+            
+        Returns:
+        --------
+        results : dict
+            Dictionary containing results from all tests
+        """
+        self.breusch_pagan_test(residuals, X)
+        self.white_test(residuals, X)
+        self.goldfeld_quandt_test(residuals, X)
+        return self.results
+    
+    def print_summary(self):
+        """Print a summary of all heteroscedasticity test results."""
+        print("\n" + "="*70)
+        print("HETEROSCEDASTICITY TEST RESULTS")
+        print("="*70)
+        
+        for test_name, result in self.results.items():
+            print(f"\n{result['test']}:")
+            print(f"  Statistic: {result['statistic']:.4f}")
+            print(f"  P-value: {result['p_value']:.6f}")
+            print(f"  Result: {result['interpretation']}")
 
 
 class NormalityTest:
