@@ -439,6 +439,10 @@ Located in `custom_linear_regression.knn_regression.KNNRegression`
 - `RegressionVisualizer`: Located in `custom_linear_regression.visualization.RegressionVisualizer`
 - `TextVisualizer`: Located in `custom_linear_regression.visualization.TextVisualizer`
 
+### PCA Class
+
+- `PCA`: Located in `custom_linear_regression.pca.PCA`
+
 ### Exception Classes
 
 All exceptions are located in `custom_linear_regression.exceptions`:
