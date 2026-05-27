@@ -140,7 +140,7 @@ class PCA:
 
         # Whitening
         if self.whiten:
-            self.components_ /= np.sqrt(self.explained_variance_)
+            self.components_ /= np.sqrt(self.explained_variance_)[:, np.newaxis]
 
         self.n_components_ = n_components
         return self
