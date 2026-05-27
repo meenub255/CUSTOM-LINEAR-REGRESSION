@@ -6,10 +6,11 @@ This document provides comprehensive documentation for both Linear Regression an
 1. [Overview](#overview)
 2. [Linear Regression Documentation](#linear-regression-documentation)
 3. [KNN Regression Documentation](#knn-regression-documentation)
-4. [Installation](#installation)
-5. [Usage Examples](#usage-examples)
-6. [API Reference](#api-reference)
-7. [Troubleshooting](#troubleshooting)
+4. [PCA Documentation](#pca-documentation)
+5. [Installation](#installation)
+6. [Usage Examples](#usage-examples)
+7. [API Reference](#api-reference)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -19,6 +20,7 @@ The custom-linear-regression library is a pure NumPy-based implementation that p
 - Linear Regression with regularization (L1/Lasso, L2/Ridge)
 - K-Nearest Neighbors Regression with multiple distance metrics
 - Feature selection methods (Forward Selection, Backward Elimination)
+- Principal Component Analysis (PCA) for dimensionality reduction
 - Statistical diagnostics (Normality, Multicollinearity, Heteroscedasticity tests)
 - Visualization tools (Matplotlib-based and text-based)
 - Robust handling of missing values and outliers
@@ -95,6 +97,143 @@ After fitting, the model has these attributes:
 - `predict(X)`: Predict using the linear model
 - `score(X, y)`: Return the coefficient of determination R²
 - `compute_feature_importances(X, y)`: Compute permutation-based feature importances
+
+---
+
+## PCA Documentation
+
+### Overview
+
+The PCA class implements Principal Component Analysis for dimensionality reduction using Singular Value Decomposition (SVD). It provides:
+
+- **Dimensionality Reduction**: Reduce the number of features while preserving maximum variance
+- **Multiple Solvers**: Support for different SVD solvers (auto, full, arpack, randomized)
+- **Whitening Option**: Transform components to have unit variance
+- **Explained Variance Ratios**: Quantify how much variance each component captures
+- **Reconstruction Capability**: Transform data back to original space
+- **Scikit-Learn Compatible API**: Standard `fit()`, `transform()`, `fit_transform()` methods
+
+### Key Features
+
+1. **Flexible Component Selection**: Specify number of components as integer, float (proportion of variance), or None (all components)
+2. **Multiple SVD Solvers**: Choose between 'auto', 'full', 'arpack', and 'randomized' solvers for efficiency
+3. **Whitening**: Option to whiten components for uncorrelated outputs with unit variance
+4. **Explained Variance Analysis**: Access to explained variance ratios and cumulative variance
+5. **Data Reconstruction**: Ability to invert the transformation to approximate original data
+6. **API Compatibility**: Follows scikit-learn's PCA API for easy integration
+
+### Parameters
+
+```
+PCA(
+    n_components=None,
+    svd_solver='auto',
+    whiten=False,
+    random_state=None,
+)
+```
+
+#### Parameter Details:
+
+- `n_components` (int, float, None): 
+  - If None: keeps all components (min(n_samples, n_features))
+  - If int: specifies the number of components to keep
+  - If float (0 < n_components < 1): specifies the proportion of variance to keep
+- `svd_solver` (str): 
+  - 'auto': automatic solver selection based on data shape
+  - 'full': exact full SVD (uses LAPACK via scipy.svd)
+  - 'arpack': truncated SVD using ARPACK (scipy.sparse.linalg.svds)
+  - 'randomized': randomized SVD for large sparse matrices
+- `whiten` (bool): When True, components are divided by sqrt(n_samples) * singular_values to ensure uncorrelated outputs with unit variance
+- `random_state` (int, RandomState, None): Seed for reproducible results (used with randomized solver)
+
+### Attributes
+
+After fitting, the model has these attributes:
+
+- `components_`: Principal axes in feature space (eigenvectors of covariance matrix)
+- `explained_variance_`: Amount of variance explained by each component
+- `explained_variance_ratio_`: Percentage of variance explained by each component
+- `singular_values_`: Singular values corresponding to each component
+- `mean_`: Per-feature mean used for centering
+- `n_components_`: Estimated number of components
+- `n_features_`: Number of features in training data
+
+### Methods
+
+- `fit(X, y=None)`: Fit the model with X (compute principal components)
+- `transform(X)`: Apply dimensionality reduction to X
+- `fit_transform(X, y=None)`: Fit to data, then transform it
+- `inverse_transform(X)`: Transform data back to original space
+
+### Usage Example
+
+```python
+import numpy as np
+from custom_linear_regression import PCA
+
+# Generate sample data with correlated features
+np.random.seed(42)
+X = np.random.randn(300, 3)
+# Create correlation between features
+X[:, 1] = X[:, 0] + 0.5*np.random.randn(300)
+X[:, 2] = X[:, 0] + X[:, 1] + 0.5*np.random.randn(300)
+
+# Create and fit PCA model
+pca = PCA(n_components=2)  # Keep 2 components
+pca.fit(X)
+
+# Transform data
+X_transformed = pca.transform(X)
+print(f"Original shape: {X.shape}")
+print(f"Transformed shape: {X_transformed.shape}")
+
+# Check explained variance
+print(f"Explained variance ratio: {pca.explained_variance_ratio_}")
+print(f"Total variance explained: {np.sum(pca.explained_variance_ratio_):.2f}")
+
+# Reconstruct data (approximation)
+X_reconstructed = pca.inverse_transform(X_transformed)
+reconstruction_error = np.mean((X - X_reconstructed) ** 2)
+print(f"Reconstruction MSE: {reconstruction_error:.4f}")
+
+# Get components (principal axes)
+print(f"Components (principal axes):\n{pca.components_}")
+```
+
+### Integration with Regression Models
+
+PCA can be used as a preprocessing step before regression to reduce dimensionality and handle multicollinearity:
+
+```python
+from custom_linear_regression import PCA, LinearRegression
+from sklearn.model_selection import train_test_split
+
+# Assume X, y are your data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Apply PCA
+pca = PCA(n_components=0.95)  # Keep 95% of variance
+X_train_pca = pca.fit_transform(X_train)
+X_test_pca = pca.transform(X_test)
+
+# Fit regression on transformed data
+model = LinearRegression()
+model.fit(X_train_pca, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test_pca)
+```
+
+### Notes
+
+- The implementation centers the data but does not scale it. For scaled PCA, standardize the data before calling `fit`.
+- The `svd_solver` parameter allows trade-offs between accuracy and speed:
+  - 'full': Most accurate but slowest for large datasets
+  - 'randomized': Fastest for large datasets, approximate
+  - 'auto': Chooses between full and randomized based on data shape
+- When `n_components` is a float, the solver defaults to 'full' to accurately compute explained variance
+- Whitening is useful when you want uncorrelated features with unit variance (e.g., for some machine learning algorithms)
 
 ---
 

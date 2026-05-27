@@ -2,7 +2,7 @@
 Custom Linear Regression Library
 
 A NumPy-based linear regression library with feature selection,
-diagnostics, visualization, and KNN regression.
+diagnostics, visualization, KNN regression, and PCA.
 """
 
 __version__ = "0.2.0"
@@ -18,6 +18,7 @@ from .diagnostics import (
     OutlierDetector,
 )
 from .visualization import RegressionVisualizer, TextVisualizer
+from .pca import PCA
 from .exceptions import (
     CustomLinearRegressionError,
     NotFittedError,
@@ -40,6 +41,8 @@ __all__ = [
     "HeteroscedasticityTest",
     "HeteroscedacityTest",
     "OutlierDetector",
+    # Dimensionality reduction
+    "PCA",
     # Visualization
     "RegressionVisualizer",
     "TextVisualizer",
