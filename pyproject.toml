@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "custom-linear-regression"
+version = "0.1.0"
+description = "A custom NumPy-based linear regression library with feature selection, diagnostics, and visualization."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+]
+
+[project.scripts]
+scrape-thrissur-housing = "custom_linear_regression.scrape_thrissur_housing:main"
+
+[project.optional-dependencies]
+viz = ["matplotlib>=3.7"]
+scrape = ["playwright>=1.54"]
+
+[tool.setuptools]
+packages = ["custom_linear_regression"]
