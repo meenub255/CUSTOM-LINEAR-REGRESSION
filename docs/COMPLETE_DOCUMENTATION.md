@@ -7,10 +7,11 @@ This document provides comprehensive documentation for both Linear Regression an
 2. [Linear Regression Documentation](#linear-regression-documentation)
 3. [KNN Regression Documentation](#knn-regression-documentation)
 4. [PCA Documentation](#pca-documentation)
-5. [Installation](#installation)
-6. [Usage Examples](#usage-examples)
-7. [API Reference](#api-reference)
-8. [Troubleshooting](#troubleshooting)
+5. [Decision Tree Documentation](#decision-tree-documentation)
+6. [Installation](#installation)
+7. [Usage Examples](#usage-examples)
+8. [API Reference](#api-reference)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -21,11 +22,12 @@ The custom-linear-regression library is a pure NumPy-based implementation that p
 - K-Nearest Neighbors Regression with multiple distance metrics
 - Feature selection methods (Forward Selection, Backward Elimination)
 - Principal Component Analysis (PCA) for dimensionality reduction
+- Decision Tree Regressor for non-linear regression
 - Statistical diagnostics (Normality, Multicollinearity, Heteroscedasticity tests)
 - Visualization tools (Matplotlib-based and text-based)
 - Robust handling of missing values and outliers
 
-Both regression models follow a scikit-learn compatible API for easy integration.
+All models follow a scikit-learn compatible API for easy integration.
 
 ---
 
@@ -237,178 +239,152 @@ y_pred = model.predict(X_test_pca)
 
 ---
 
-## KNN Regression Documentation
+## Decision Tree Documentation
 
 ### Overview
 
-The KNNRegression class implements K-Nearest Neighbors regression using pure NumPy. It provides:
+The DecisionTreeRegressor class implements a decision tree for regression using a greedy, top-down approach. It provides:
 
-- **Multiple distance metrics** for flexibility with different data types
-- **Automatic hyperparameter detection** to find the best K value
-- **Robust data handling** with missing values and outlier management
-- **Feature importance analysis** through permutation importance
-- **Scikit-Learn compatible API** for easy integration
+- **Interpretable Models**: Produces human-readable decision rules
+- **Non-linear Relationships**: Can capture complex non-linear patterns
+- **Feature Importance**: Built-in feature importance calculation
+- **Handling of Mixed Data**: Works with numerical features (can be extended for categorical)
+- **Robust to Outliers**: Less sensitive to outliers than linear models
+- **Scikit-Learn Compatible API**: Standard `fit()`, `predict()`, `score()` methods
 
 ### Key Features
 
-1. **Multiple Distance Metrics**: Euclidean, Manhattan, Minkowski (fully customizable)
-2. **Weighting Strategies**: Uniform averaging or inverse-distance weighting
-3. **Data Preprocessing**: Automatic handling of missing values and outliers
-4. **Feature Scaling**: Z-score normalization for distance computation
-5. **Feature Importance**: Permutation-based importance analysis
-6. **Hyperparameter Tuning**: Support for k, metric, and weights optimization
-7. **Best K-Value Detection**: Automatically identifies and displays optimal K value with R² score
-8. **Scikit-Learn Compatible**: Standard `fit()`, `predict()`, `score()` API
+1. **Recursive Binary Splitting**: Builds tree by recursively splitting data based on feature thresholds
+2. **MSE Splitting Criterion**: Uses mean squared error to determine best splits
+3. **Configurable Stopping Criteria**: Control tree complexity with max_depth, min_samples_split, min_samples_leaf
+4. **Feature Importance**: Calculates importance based on total reduction in MSE
+5. **Rule Extraction**: Can be converted to if-then rules for interpretation
+6. **Handling of Missing Values**: Can be extended to handle missing data (currently requires clean input)
 
 ### Parameters
 
 ```
-KNNRegression(
-    k=5,
-    metric='euclidean',
-    weights='uniform',
-    p=2,
-    scale=True,
-    missing_strategy='mean',
-    drop_missing=False,
-    outlier_strategy=None,
-    outlier_threshold=3.0,
-    outlier_action='remove',
+DecisionTreeRegressor(
+    max_depth=None,
+    min_samples_split=2,
+    min_samples_leaf=1,
 )
 ```
 
 #### Parameter Details:
 
-- `k` (int): Number of neighbours to use for prediction (default: 5)
-- `metric` (str): Distance metric to use. Options: 'euclidean', 'manhattan', 'minkowski'
-- `weights` (str): Weight function used in prediction. Options: 'uniform', 'distance'
-- `p` (int): Minkowski exponent (only used when metric='minkowski')
-- `scale` (bool): Whether to apply z-score feature scaling before distance computation (default: True)
-- `missing_strategy` (str): Strategy for handling missing values. Options: 'mean', 'median', 'forward_fill', 'backward_fill'. Default: 'mean'.
-- `drop_missing` (bool): Whether to drop rows with missing values instead of imputing.
-- `outlier_strategy` (str or None): Strategy for detecting outliers. Options: None, 'zscore', 'iqr'.
-- `outlier_threshold` (float): Threshold for outlier detection (z-score or IQR multiplier).
-- `outlier_action` (str): Action to take for outliers: 'remove', 'cap', or None.
+- `max_depth` (int or None): 
+  - Maximum depth of the tree. If None, nodes are expanded until all leaves are pure or contain less than min_samples_split samples.
+  - Controls overfitting: deeper trees can model more complex relationships but may overfit.
+- `min_samples_split` (int): 
+  - Minimum number of samples required to split an internal node.
+  - Helps prevent overfitting by requiring sufficient data to make a split.
+- `min_samples_leaf` (int): 
+  - Minimum number of samples required to be at a leaf node.
+  - Ensures leaves have sufficient data for reliable predictions.
 
 ### Attributes
 
 After fitting, the model has these attributes:
-- `X_train_`: Training data (after preprocessing)
-- `y_train_`: Target values (after preprocessing)
-- `feature_importances_`: Permutation-based feature importance
-- `n_features_in_`: Number of features seen during fit
-- `feature_names_in_`: Names of features seen during fit
-- `best_k_`: Optimal k value found (if auto-tuning was used)
-- `best_score_`: R² score of the best k value
+
+- `tree_`: The decision tree structure (nested dictionary)
+- `n_features_`: Number of features seen during fit
+- `max_depth_`: The maximum depth of the fitted tree
+- `n_leaves_`: Number of leaf nodes in the fitted tree
 
 ### Methods
 
-- `fit(X, y)`: Fit the model using training data
-- `predict(X)`: Predict the target for the provided data
+- `fit(X, y)`: Build the decision tree from training data
+- `predict(X)`: Predict regression targets for samples in X
 - `score(X, y)`: Return the coefficient of determination R²
-- `compute_feature_importances(X, y)`: Compute permutation-based feature importances
-- `find_best_k(X, y, k_range=None)`: Find optimal k value using cross-validation
+- `get_params()`: Get parameters of the estimator
+- `set_params(**params)`: Set the parameters of the estimator
 
----
-
-## Installation
-
-Install the package locally:
-```bash
-python -m pip install .
-```
-
-For editable development install:
-```bash
-python -m pip install -e .
-```
-
-### Dependencies
-
-- numpy>=1.24
-- scipy>=1.10
-
-### Optional Dependencies
-
-- viz: matplotlib>=3.7 (for visualization)
-- scrape: playwright>=1.54 (for web scraping utilities)
-
----
-
-## Usage Examples
-
-### Linear Regression Example
+### Usage Example
 
 ```python
 import numpy as np
-from custom_linear_regression import LinearRegression
+from custom_linear_regression import DecisionTreeRegressor
 
-# Generate sample data
+# Generate sample data with non-linear relationship
 np.random.seed(42)
-X = np.random.randn(100, 3)
-y = 2 + 1.5*X[:,0] - 2.0*X[:,1] + 0.5*X[:,2] + np.random.randn(100)*0.1
+X = np.random.randn(100, 2) * 10
+# Create a non-linear target: y = x1^2 + x2 + noise
+y = X[:, 0]**2 + X[:, 1] + np.random.randn(100) * 5
 
-# Create and fit model
-model = LinearRegression(fit_intercept=True, penalty=None)
-model.fit(X, y)
+# Create and fit decision tree model
+dt = DecisionTreeRegressor(max_depth=5, min_samples_split=10, min_samples_leaf=5)
+dt.fit(X, y)
 
 # Make predictions
-y_pred = model.predict(X[:5])
-print("Predictions:", y_pred)
-print("R² Score:", model.score(X, y))
-print("Coefficients:", model.coef_)
-print("Intercept:", model.intercept_)
-```
-
-### KNN Regression Example
-
-```python
-import numpy as np
-from custom_linear_regression import KNNRegression
-
-# Generate sample data
-np.random.seed(42)
-X = np.random.randn(100, 2)
-y = np.sum(X**2, axis=1) + np.random.randn(100)*0.1  # Non-linear relationship
-
-# Create and fit model
-model = KNNRegression(k=5, metric='euclidean', weights='distance', scale=True)
-model.fit(X, y)
-
-# Make predictions
-y_pred = model.predict(X[:5])
-print("Predictions:", y_pred)
-print("R² Score:", model.score(X, y))
-
-# Find best k value
-best_k = model.find_best_k(X, y, k_range=range(1, 21))
-print("Best k value:", best_k)
+y_pred = dt.predict(X[:5])
+print(f"Predictions: {y_pred}")
+print(f"R² Score: {dt.score(X, y):.4f}")
 
 # Feature importance
-importances = model.compute_feature_importances(X, y)
-print("Feature importances:", importances)
+print(f"Feature Importances: {dt.feature_importances_}")
+
+# Tree depth and complexity
+print(f"Tree Depth: {dt.max_depth_}")
+print(f"Number of Leaves: {dt.n_leaves_}")
 ```
 
-### Advanced Usage with Feature Selection
+### Integration with Other Library Components
+
+Decision trees can be combined with other library components for enhanced modeling:
 
 ```python
-from custom_linear_regression import LinearRegression, ForwardSelection
+from custom_linear_regression import DecisionTreeRegressor, PCA, ForwardSelection
+from sklearn.model_selection import train_test_split
 
-# Create base model
-base_model = LinearRegression()
+# Assume X, y are your data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Apply forward selection
+# Option 1: Use PCA for dimensionality reduction before decision tree
+pca = PCA(n_components=0.95)
+X_train_pca = pca.fit_transform(X_train)
+X_test_pca = pca.transform(X_test)
+
+dt_pca = DecisionTreeRegressor(max_depth=4)
+dt_pca.fit(X_train_pca, y_train)
+print(f"Decision Tree + PCA R²: {dt_pca.score(X_test_pca, y_test):.4f}")
+
+# Option 2: Use feature selection before decision tree
+base_model = DecisionTreeRegressor(max_depth=4)
 selector = ForwardSelection(base_model, k_features=5)
-selector.fit(X, y)
+selector.fit(X_train, y_train)
 
-# Get selected features
-selected_features = selector.k_feature_idx_
-print("Selected features:", selected_features)
+X_train_selected = X_train[:, selector.k_feature_idx_]
+X_test_selected = X_test[:, selector.k_feature_idx_]
 
-# Fit final model with selected features
-final_model = LinearRegression()
-final_model.fit(X[:, selected_features], y)
+dt_fs = DecisionTreeRegressor(max_depth=4)
+dt_fs.fit(X_train_selected, y_train)
+print(f"Decision Tree + Feature Selection R²: {dt_fs.score(X_test_selected, y_test):.4f}")
+
+# Option 3: Use decision tree for feature importance to guide preprocessing
+dt = DecisionTreeRegressor(max_depth=6)
+dt.fit(X_train, y_train)
+importances = dt.feature_importances_
+print(f"Decision Tree Feature Importances: {importances}")
+
+# Use importances to select top features
+top_feature_indices = np.argsort(importances)[::-1][:3]  # Top 3 features
+X_top = X[:, top_feature_indices]
+X_train_top, X_test_top, y_train_top, y_test_top = train_test_split(X_top, y, test_size=0.2, random_state=42)
+
+dt_top = DecisionTreeRegressor(max_depth=4)
+dt_top.fit(X_train_top, y_train_top)
+print(f"Decision Tree (Top Features) R²: {dt_top.score(X_test_top, y_test_top):.4f}")
 ```
+
+### Notes
+
+- The implementation currently supports only numerical features. Categorical features need to be encoded numerically before use.
+- The splitting criterion is mean squared error (MSE), which is appropriate for regression tasks.
+- For classification tasks, a separate DecisionTreeClassifier would be needed (using Gini impurity or entropy).
+- Decision trees are prone to overfitting; use max_depth, min_samples_split, and min_samples_leaf to control complexity.
+- Ensemble methods like Random Forests or Gradient Boosting can be built upon this base decision tree implementation.
+- The tree structure is stored as a nested dictionary, making it possible to extract and visualize decision rules.
 
 ---
 
@@ -441,7 +417,11 @@ Located in `custom_linear_regression.knn_regression.KNNRegression`
 
 ### PCA Class
 
-- `PCA`: Located in `custom_linear_regression.pca.PCA`
+Located in `custom_linear_regression.pca.PCA`
+
+### DecisionTreeRegressor Class
+
+Located in `custom_linear_regression.decision_tree.DecisionTreeRegressor`
 
 ### Exception Classes
 
