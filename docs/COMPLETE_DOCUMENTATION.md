@@ -8,10 +8,11 @@ This document provides comprehensive documentation for both Linear Regression an
 3. [KNN Regression Documentation](#knn-regression-documentation)
 4. [PCA Documentation](#pca-documentation)
 5. [Decision Tree Documentation](#decision-tree-documentation)
-6. [Installation](#installation)
-7. [Usage Examples](#usage-examples)
-8. [API Reference](#api-reference)
-9. [Troubleshooting](#troubleshooting)
+6. [Perceptron Documentation](#perceptron-documentation)
+7. [Installation](#installation)
+8. [Usage Examples](#usage-examples)
+9. [API Reference](#api-reference)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -23,6 +24,7 @@ The custom-linear-regression library is a pure NumPy-based implementation that p
 - Feature selection methods (Forward Selection, Backward Elimination)
 - Principal Component Analysis (PCA) for dimensionality reduction
 - Decision Tree Regressor for non-linear regression
+- Perceptron Classifier for binary classification
 - Statistical diagnostics (Normality, Multicollinearity, Heteroscedasticity tests)
 - Visualization tools (Matplotlib-based and text-based)
 - Robust handling of missing values and outliers
