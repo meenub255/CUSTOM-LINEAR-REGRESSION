@@ -32,7 +32,7 @@ def test_decision_tree_basic():
     score = dt.score(X, y)
     assert 0 <= score <= 1
     
-    print("✓ Basic Decision Tree test passed")
+    print("+ Basic Decision Tree test passed")
 
 def test_decision_tree_perfect_fit():
     """Test decision tree on perfectly separable data."""
@@ -51,7 +51,7 @@ def test_decision_tree_perfect_fit():
     mse = np.mean((y - y_pred) ** 2)
     assert mse < 0.1  # Allow small numerical errors
     
-    print("✓ Perfect fit Decision Tree test passed")
+    print("+ Perfect fit Decision Tree test passed")
 
 def test_decision_tree_parameters():
     """Test different parameter combinations."""
@@ -81,7 +81,7 @@ def test_decision_tree_parameters():
     dt_large_leaf.fit(X, y)
     # Should be constrained
     
-    print("✓ Decision Tree parameters test passed")
+    print("+ Decision Tree parameters test passed")
 
 def test_decision_tree_not_fitted_error():
     """Test that NotFittedError is raised when appropriate."""
@@ -101,7 +101,7 @@ def test_decision_tree_not_fitted_error():
     except Exception as e:
         assert "not fitted" in str(e).lower()
     
-    print("✓ NotFittedError test passed")
+    print("+ NotFittedError test passed")
 
 def test_decision_tree_feature_importance():
     """Test that feature importance is computed correctly."""
@@ -125,7 +125,7 @@ def test_decision_tree_feature_importance():
     assert importances[0] >= importances[1]
     assert importances[0] >= importances[2]
     
-    print("✓ Decision Tree feature importance test passed")
+    print("+ Decision Tree feature importance test passed")
 
 def main():
     """Run all tests."""
@@ -137,7 +137,7 @@ def main():
     test_decision_tree_not_fitted_error()
     test_decision_tree_feature_importance()
     
-    print("\n🎉 All Decision Tree tests passed!")
+    print("\n* All Decision Tree tests passed!")
 
 if __name__ == "__main__":
     main()

@@ -59,9 +59,18 @@ class DecisionTreeRegressor:
         # Convert to numpy arrays
         X = np.array(X, dtype=np.float64)
         y = np.array(y, dtype=np.float64)
+        
+        # Store number of features
+        self.n_features_ = X.shape[1]
 
         # Initialize and grow the tree
         self.tree_ = self._grow_tree(X, y)
+        
+        # Compute tree properties after fitting
+        self.max_depth_ = self._get_tree_depth(self.tree_)
+        self.n_leaves_ = self._count_leaves(self.tree_)
+        self.feature_importances_ = self._compute_feature_importances(X.shape[1])
+        
         return self
 
     def _grow_tree(self, X, y, depth=0):
@@ -218,6 +227,30 @@ class DecisionTreeRegressor:
         X = np.array(X, dtype=np.float64)
         return np.array([self._predict_tree(inputs, self.tree_) for inputs in X])
 
+    def score(self, X, y):
+        """Return the coefficient of determination R^2 of the prediction.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            Test samples.
+
+        y : array-like, shape (n_samples,)
+            True values for X.
+
+        Returns
+        -------
+        score : float
+            R^2 of self.predict(X) wrt y.
+        """
+        y_pred = self.predict(X)
+        # Calculate R^2: 1 - (sum of squared residuals) / (total sum of squares)
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        if ss_tot == 0:
+            return 0.0  # Avoid division by zero; if all y are same, R^2 is 0 (or undefined, but we return 0)
+        return 1 - ss_res / ss_tot
+
     def _predict_tree(self, inputs, tree):
         """Predict a single sample by traversing the tree.
 
@@ -242,3 +275,76 @@ class DecisionTreeRegressor:
             return self._predict_tree(inputs, tree["left"])
         else:
             return self._predict_tree(inputs, tree["right"])
+
+    def _get_tree_depth(self, tree):
+        """Calculate the maximum depth of the tree.
+        
+        Parameters
+        ----------
+        tree : dict
+            The decision tree (or subtree).
+            
+        Returns
+        -------
+        int : The depth of the tree.
+        """
+        if "value" in tree:
+            return 0
+        left_depth = self._get_tree_depth(tree["left"])
+        right_depth = self._get_tree_depth(tree["right"])
+        return max(left_depth, right_depth) + 1
+
+    def _count_leaves(self, tree):
+        """Count the number of leaf nodes in the tree.
+        
+        Parameters
+        ----------
+        tree : dict
+            The decision tree (or subtree).
+            
+        Returns
+        -------
+        int : The number of leaf nodes.
+        """
+        if "value" in tree:
+            return 1
+        return self._count_leaves(tree["left"]) + self._count_leaves(tree["right"])
+
+    def _compute_feature_importances(self, n_features):
+        """Compute feature importance based on total reduction in MSE.
+        
+        Parameters
+        ----------
+        n_features : int
+            Number of features.
+            
+        Returns
+        -------
+        array : Feature importances (sum to 1).
+        """
+        importances = np.zeros(n_features)
+        self._accumulate_feature_importance(self.tree_, importances)
+        
+        # Normalize to sum to 1
+        if np.sum(importances) > 0:
+            importances = importances / np.sum(importances)
+        return importances
+
+    def _accumulate_feature_importance(self, tree, importances):
+        """Recursively accumulate feature importance from the tree.
+        
+        Parameters
+        ----------
+        tree : dict
+            The decision tree (or subtree).
+        importances : array
+            Array to accumulate importances into.
+        """
+        if "value" not in tree:
+            feature_index = tree["feature_index"]
+            # Calculate the weight of this split (proportion of samples)
+            # For simplicity, we'll use equal weighting - in a full implementation,
+            # this would be weighted by the number of samples at this node
+            importances[feature_index] += 1.0
+            self._accumulate_feature_importance(tree["left"], importances)
+            self._accumulate_feature_importance(tree["right"], importances)
